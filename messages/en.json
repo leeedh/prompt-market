@@ -1,0 +1,85 @@
+{
+  "common": {
+    "appName": "Prompt Market",
+    "login": "Login",
+    "logout": "Logout",
+    "search": "Search",
+    "searchPlaceholder": "Search prompts...",
+    "cart": "Cart",
+    "profile": "Profile",
+    "continueShopping": "Continue Shopping",
+    "delete": "Delete",
+    "add": "Add to Cart",
+    "inCart": "In Cart",
+    "addToCart": "Added to Cart",
+    "addToCartDescription": "{title} has been added to your cart.",
+    "currency": "KRW",
+    "sales": "sales",
+    "prompts": "prompts",
+    "noResults": "No results found.",
+    "sortBy": "Sort:",
+    "popular": "Popular"
+  },
+  "home": {
+    "title": "AI Prompt Marketplace",
+    "subtitle": "Maximize your productivity with verified prompts created by experts",
+    "category": "Category",
+    "tags": "Tags",
+    "categories": {
+      "all": "All",
+      "chatgpt": "ChatGPT",
+      "midjourney": "Midjourney",
+      "claude": "Claude",
+      "stableDiffusion": "Stable Diffusion",
+      "other": "Other"
+    },
+    "tagLabels": {
+      "marketing": "Marketing",
+      "contentCreation": "Content Creation",
+      "imageGeneration": "Image Generation",
+      "coding": "Coding",
+      "translation": "Translation",
+      "summarization": "Summarization",
+      "creation": "Creation"
+    }
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "emptyDescription": "Add some prompts to your cart!",
+    "browsePrompts": "Browse Prompts",
+    "clearCart": "Clear Cart",
+    "orderSummary": "Order Summary",
+    "productAmount": "Product Amount",
+    "discount": "Discount",
+    "total": "Total",
+    "checkout": "Checkout",
+    "loginToCheckout": "Login to Checkout",
+    "refundNotice": "Digital products are non-refundable after purchase"
+  },
+  "login": {
+    "login": "Login",
+    "register": "Register",
+    "loginTitle": "Login",
+    "loginDescription": "Sign in to your account to purchase prompts",
+    "registerTitle": "Register",
+    "registerDescription": "Create a new account to purchase prompts",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "emailPlaceholder": "example@email.com",
+    "passwordPlaceholder": "••••••",
+    "namePlaceholder": "John Doe",
+    "loginButton": "Login",
+    "loggingIn": "Logging in...",
+    "registerButton": "Register",
+    "registering": "Registering...",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "minPasswordLength": "Minimum 6 characters",
+    "loginError": "Email or password is incorrect.",
+    "registerError": "Registration failed. Please try again.",
+    "passwordTooShort": "Password must be at least 6 characters long."
+  }
+}
+
