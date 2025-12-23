@@ -21,6 +21,7 @@ import {
   User,
 } from "lucide-react";
 import { Link, useRouter } from "@/i18n/routing";
+import { useParams } from "next/navigation";
 import { useCart } from "@/features/cart/store/cartStore";
 import { useAuth } from "@/features/auth/store/authStore";
 import { useToast } from "@/shared/hooks/use-toast";
@@ -29,6 +30,7 @@ import { ModeToggle } from "@/components/mode-toggle";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { useTranslations } from "next-intl";
 import { createPromptRepositoryClient, type Prompt } from "@/features/prompts/repositories";
+import { StructuredData } from "@/components/seo/structured-data";
 
 const categories = [
   "all",
@@ -49,8 +51,13 @@ const tags = [
 ];
 
 export default function HomePage() {
-  const t = useTranslations();
-  const { session } = useSession();
+  const t = useTranslations()
+  const { session } = useSession()
+  const params = useParams()
+  const locale = (params?.locale as string) || 'ko'
+  // 클라이언트에서만 baseUrl을 동적으로 가져오고, 서버에서는 환경 변수 사용
+  // 하이드레이션 불일치를 방지하기 위해 StructuredData 컴포넌트 내부에서 처리
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -140,6 +147,16 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* 구조화된 데이터 (JSON-LD) - BreadcrumbList */}
+      <StructuredData
+        type="breadcrumb"
+        data={{
+          items: [
+            { name: '홈', url: `${baseUrl}/${locale}` },
+            { name: '프롬프트 목록', url: `${baseUrl}/${locale}` },
+          ],
+        }}
+      />
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 py-4">

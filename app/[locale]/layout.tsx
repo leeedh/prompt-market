@@ -10,6 +10,8 @@ import { routing } from '@/i18n/routing'
 import { ClerkProvider } from '@clerk/nextjs'
 import { CartUserSync } from '@/components/cart-user-sync'
 import { koKR, enUS } from '@clerk/localizations'
+import { StructuredData } from '@/components/seo/structured-data'
+import { createSafeUrl, getBaseUrl } from '@/lib/seo-utils'
 import '../globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -40,9 +42,13 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  metadataBase: createSafeUrl(process.env.NEXT_PUBLIC_SITE_URL),
   alternates: {
     canonical: '/',
+    languages: {
+      ko: '/ko',
+      en: '/en',
+    },
   },
   openGraph: {
     type: 'website',
@@ -119,10 +125,23 @@ export default async function LocaleLayout({
   // 'ko' 로케일일 때 한국어, 그 외에는 영어 사용
   const clerkLocalization = locale === 'ko' ? koKR : enUS
 
+  const baseUrl = getBaseUrl()
+
   return (
     <ClerkProvider localization={clerkLocalization}>
       <html lang={locale} suppressHydrationWarning>
         <body className={`font-sans antialiased`}>
+          {/* 구조화된 데이터 (JSON-LD) - Organization 스키마 */}
+          <StructuredData
+            type="organization"
+            data={{
+              name: 'Prompt Market',
+              url: baseUrl,
+              logo: `${baseUrl}/og-image.png`,
+              description:
+                '전문가가 만든 검증된 AI 프롬프트를 구매하고 판매하는 마켓플레이스. ChatGPT, Midjourney, Claude, Stable Diffusion 등 다양한 AI 도구용 고품질 프롬프트를 만나보세요.',
+            }}
+          />
           <NextIntlClientProvider messages={messages}>
             <ThemeProvider
               attribute="class"

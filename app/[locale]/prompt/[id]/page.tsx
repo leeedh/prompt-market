@@ -20,9 +20,12 @@ import { reviewRepository } from "@/features/reviews/repositories/ReviewReposito
 import { ModeToggle } from "@/components/mode-toggle"
 import { createPromptRepositoryClient, type Prompt } from "@/features/prompts/repositories"
 import { useSession } from "@clerk/nextjs"
+import { StructuredData } from "@/components/seo/structured-data"
 
-export default function PromptDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function PromptDetailPage({ params }: { params: Promise<{ id: string; locale?: string }> }) {
+  const resolvedParams = use(params)
+  const { id } = resolvedParams
+  const locale = resolvedParams.locale || 'ko'
   const { session } = useSession()
   const { addToCart, cartItems } = useCart()
   const { isAuthenticated, user } = useAuth()
@@ -263,8 +266,23 @@ export default function PromptDetailPage({ params }: { params: Promise<{ id: str
     })
   }
 
+  // 클라이언트에서만 baseUrl을 동적으로 가져오고, 서버에서는 환경 변수 사용
+  // 하이드레이션 불일치를 방지하기 위해 StructuredData 컴포넌트 내부에서 처리
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
+
   return (
     <div className="min-h-screen bg-background">
+      {/* 구조화된 데이터 (JSON-LD) - SEO 최적화 */}
+      {prompt && (
+        <StructuredData
+          type="product"
+          data={{
+            prompt,
+            baseUrl,
+            locale,
+          }}
+        />
+      )}
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 py-4">

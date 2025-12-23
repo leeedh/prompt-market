@@ -1,20 +1,20 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { CheckCircle2, Sparkles } from "lucide-react"
-import { Link } from "@/i18n/routing"
-import { ModeToggle } from "@/components/mode-toggle"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckCircle2, Sparkles } from "lucide-react";
+import { Link } from "@/i18n/routing";
+import { ModeToggle } from "@/components/mode-toggle";
 
 interface PageProps {
-  params: { locale: string }
+  params: { locale: string };
   searchParams: {
-    paymentKey?: string
-    orderId?: string
-    amount?: string
-  }
+    paymentKey?: string;
+    orderId?: string;
+    amount?: string;
+  };
 }
 
 export default function CheckoutSuccessPage({ searchParams }: PageProps) {
-  const { paymentKey, orderId, amount } = searchParams
+  const { paymentKey, orderId, amount } = searchParams;
 
   return (
     <div className="min-h-screen bg-background">
@@ -37,9 +37,12 @@ export default function CheckoutSuccessPage({ searchParams }: PageProps) {
               <div className="flex justify-center">
                 <CheckCircle2 className="h-12 w-12 text-emerald-500" />
               </div>
-              <CardTitle className="text-2xl font-bold">결제가 완료되었습니다</CardTitle>
+              <CardTitle className="text-2xl font-bold">
+                결제가 완료되었습니다
+              </CardTitle>
               <p className="text-sm text-muted-foreground">
-                테스트 결제가 정상적으로 처리되었습니다. 아래 결제 정보를 확인할 수 있습니다.
+                테스트 결제가 정상적으로 처리되었습니다. 아래 결제 정보를 확인할
+                수 있습니다.
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -53,13 +56,17 @@ export default function CheckoutSuccessPage({ searchParams }: PageProps) {
                 {paymentKey && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">결제 키</span>
-                    <span className="font-mono truncate max-w-[220px] text-right">{paymentKey}</span>
+                    <span className="font-mono truncate max-w-[220px] text-right">
+                      {paymentKey}
+                    </span>
                   </div>
                 )}
                 {amount && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">결제 금액</span>
-                    <span className="font-semibold">{Number(amount).toLocaleString()}원</span>
+                    <span className="font-semibold">
+                      {Number(amount).toLocaleString()}원
+                    </span>
                   </div>
                 )}
               </div>
@@ -78,15 +85,13 @@ export default function CheckoutSuccessPage({ searchParams }: PageProps) {
               </div>
 
               <p className="text-xs text-muted-foreground">
-                이 화면은 토스페이먼츠 테스트 결제 환경에서만 표시됩니다. 실제 결제 승인/정산 로직은 서버에서
-                구현해야 합니다.
+                이 화면은 토스페이먼츠 테스트 결제 환경에서만 표시됩니다. 실제
+                결제 승인/정산 로직은 서버에서 구현해야 합니다.
               </p>
             </CardContent>
           </Card>
         </div>
       </main>
     </div>
-  )
+  );
 }
-
-
