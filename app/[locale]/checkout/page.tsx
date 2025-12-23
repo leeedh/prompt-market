@@ -1,39 +1,35 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
+import Script from "next/script"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { ArrowLeft, CreditCard, Smartphone, Sparkles } from "lucide-react"
-import Link from "next/link"
+import { ArrowLeft, Sparkles } from "lucide-react"
+import { Link } from "@/i18n/routing"
 import { useCart } from "@/features/cart/store/cartStore"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/features/auth/store/authStore"
 import { ModeToggle } from "@/components/mode-toggle"
-import { purchaseRepository } from "@/features/purchases/repositories/PurchaseRepository.local"
+import { createPromptRepositoryClient, type Prompt } from "@/features/prompts/repositories"
 
-const mockPrompts = {
-  "1": {
-    id: "1",
-    title: "블로그 포스트 자동 생성 프롬프트",
-    price: 15000,
-  },
-  "2": {
-    id: "2",
-    title: "제품 상세 이미지 생성 프롬프트",
-    price: 25000,
-  },
-}
+const CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY
 
 export default function CheckoutPage() {
-  const { cartItems, clearCart } = useCart()
+  const { cartItems } = useCart()
   const router = useRouter()
   const { user, isAuthenticated } = useAuth()
-  const [paymentMethod, setPaymentMethod] = useState("card")
+
+  const [prompts, setPrompts] = useState<Prompt[]>([])
   const [email, setEmail] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false)
+
+  const total = useMemo(
+    () => prompts.reduce((sum, item) => sum + item.price, 0),
+    [prompts],
+  )
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -47,8 +43,29 @@ export default function CheckoutPage() {
     }
   }, [user])
 
-  const items = cartItems.map((id) => mockPrompts[id as keyof typeof mockPrompts]).filter(Boolean)
-  const total = items.reduce((sum, item) => sum + item.price, 0)
+  // 장바구니에 담긴 프롬프트 정보를 Supabase에서 로드
+  useEffect(() => {
+    if (cartItems.length === 0) {
+      setPrompts([])
+      return
+    }
+
+    async function loadCartPrompts() {
+      try {
+        // 프롬프트 목록은 RLS 정책상 모든 사용자(anon 포함)가 읽기 가능하므로
+        // Clerk 토큰 없이 공개 Supabase 클라이언트로 조회합니다.
+        const repository = createPromptRepositoryClient()
+
+        const all = await repository.getAll({ status: "active" })
+        const map = new Map(all.map((p) => [p.id, p]))
+        setPrompts(cartItems.map((id) => map.get(id)).filter(Boolean) as Prompt[])
+      } catch (error) {
+        console.error("결제 페이지 프롬프트 로드 중 오류:", error)
+      }
+    }
+
+    void loadCartPrompts()
+  }, [cartItems])
 
   const handlePayment = async () => {
     if (!email) {
@@ -56,29 +73,70 @@ export default function CheckoutPage() {
       return
     }
 
+    if (!CLIENT_KEY) {
+      alert("결제 클라이언트 키가 설정되어 있지 않습니다. 환경 변수를 확인해주세요.")
+      return
+    }
+
+    if (!isScriptLoaded || !(window as any).TossPayments) {
+      alert("결제 모듈이 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.")
+      return
+    }
+
     setIsProcessing(true)
 
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    try {
+      const orderId = `order_${Date.now()}`
+      const primaryTitle = prompts[0]?.title ?? "프롬프트 결제"
+      const orderName =
+        prompts.length > 1 ? `${primaryTitle} 외 ${prompts.length - 1}건` : primaryTitle
 
-    const newPurchase = {
-      id: Date.now().toString(),
-      date: new Date().toISOString(),
-      items: items,
-      total: total,
-      email: email,
-      paymentMethod: paymentMethod,
+      const { origin, pathname } = window.location
+      const basePath = pathname.replace(/\/checkout$/, "")
+      const successUrl = `${origin}${basePath}/checkout/success`
+      const failUrl = `${origin}${basePath}/checkout/fail`
+
+      const tossPayments = (window as any).TossPayments(CLIENT_KEY)
+      const payment = tossPayments.payment({
+        customerKey: user?.id ?? (window as any).TossPayments.ANONYMOUS,
+      })
+
+      await payment.requestPayment({
+        method: "CARD",
+        amount: {
+          currency: "KRW",
+          value: total,
+        },
+        orderId,
+        orderName,
+        successUrl,
+        failUrl,
+        customerEmail: email,
+        customerName: user?.name ?? "",
+        card: {
+          useEscrow: false,
+          flowMode: "DEFAULT",
+          useCardPoint: false,
+          useAppCardOnly: false,
+          useInternationalCardOnly: false,
+        },
+      })
+    } catch (error: any) {
+      if (error?.code === "USER_CANCEL") {
+        return
+      }
+      console.error("결제 요청 중 오류:", error)
+      alert("결제 요청 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.")
+    } finally {
+      setIsProcessing(false)
     }
-    purchaseRepository.create(newPurchase)
-
-    clearCart()
-    router.push("/my-page")
   }
 
   if (!isAuthenticated) {
     return null
   }
 
-  if (items.length === 0) {
+  if (prompts.length === 0) {
     return (
       <div className="min-h-screen bg-background">
         <header className="border-b">
@@ -151,44 +209,23 @@ export default function CheckoutPage() {
               </CardContent>
             </Card>
 
-            {/* Payment Method */}
+            {/* TossPayments 결제창 안내 영역 */}
             <Card>
               <CardHeader>
-                <CardTitle>결제 수단</CardTitle>
+                <CardTitle>결제 안내</CardTitle>
               </CardHeader>
               <CardContent>
-                <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <div className="flex items-center space-x-3 rounded-lg border p-4 cursor-pointer hover:bg-muted/50">
-                    <RadioGroupItem value="card" id="card" />
-                    <Label htmlFor="card" className="flex flex-1 items-center gap-3 cursor-pointer">
-                      <CreditCard className="h-5 w-5" />
-                      <div>
-                        <p className="font-semibold">신용/체크카드</p>
-                        <p className="text-sm text-muted-foreground">모든 카드 사용 가능</p>
-                      </div>
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-3 rounded-lg border p-4 cursor-pointer hover:bg-muted/50">
-                    <RadioGroupItem value="kakaopay" id="kakaopay" />
-                    <Label htmlFor="kakaopay" className="flex flex-1 items-center gap-3 cursor-pointer">
-                      <Smartphone className="h-5 w-5" />
-                      <div>
-                        <p className="font-semibold">카카오페이</p>
-                        <p className="text-sm text-muted-foreground">간편 결제</p>
-                      </div>
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-3 rounded-lg border p-4 cursor-pointer hover:bg-muted/50">
-                    <RadioGroupItem value="naverpay" id="naverpay" />
-                    <Label htmlFor="naverpay" className="flex flex-1 items-center gap-3 cursor-pointer">
-                      <Smartphone className="h-5 w-5" />
-                      <div>
-                        <p className="font-semibold">네이버페이</p>
-                        <p className="text-sm text-muted-foreground">간편 결제</p>
-                      </div>
-                    </Label>
-                  </div>
-                </RadioGroup>
+                {!CLIENT_KEY ? (
+                  <p className="text-sm text-destructive">
+                    환경 변수 <code className="font-mono">NEXT_PUBLIC_TOSS_CLIENT_KEY</code> 가 설정되어 있지
+                    않아 테스트 결제를 진행할 수 없습니다.
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    아래 &quot;결제하기&quot; 버튼을 누르면 토스페이먼츠 결제창이 열립니다. 결제 수단과 카드 정보를
+                    선택한 뒤 결제를 완료해 주세요.
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -202,7 +239,7 @@ export default function CheckoutPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-3 border-b pb-4">
-                    {items.map((item) => (
+                    {prompts.map((item) => (
                       <div key={item.id} className="flex justify-between text-sm">
                         <span className="text-muted-foreground">{item.title}</span>
                         <span className="font-medium">{item.price.toLocaleString()}원</span>
@@ -226,7 +263,12 @@ export default function CheckoutPage() {
                     <span className="text-primary">{total.toLocaleString()}원</span>
                   </div>
 
-                  <Button className="w-full" size="lg" onClick={handlePayment} disabled={isProcessing}>
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    onClick={handlePayment}
+                    disabled={isProcessing || !CLIENT_KEY}
+                  >
                     {isProcessing ? "결제 처리중..." : `${total.toLocaleString()}원 결제하기`}
                   </Button>
 
@@ -241,6 +283,14 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+
+      {/* TossPayments SDK */}
+      <Script
+        src="https://js.tosspayments.com/v2/standard"
+        strategy="afterInteractive"
+        onLoad={() => setIsScriptLoaded(true)}
+      />
     </div>
   )
 }
+

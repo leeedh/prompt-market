@@ -171,11 +171,11 @@
 
 #### 데이터베이스 스키마 구축
 
-- [ ] `profiles` 테이블 생성
+- [x] `profiles` 테이블 생성 (`supabase/migrations/002_create_profiles_table.sql`)
 - [x] `prompts` 테이블 생성 + RLS 정책 (`supabase/migrations/001_create_prompts_table.sql`)
-- [ ] `carts` 테이블 생성 (unique constraint: user_id + prompt_id)
-- [ ] `purchases` 테이블 생성
-- [ ] RLS (Row Level Security) 정책 설정 (프롬프트 외 테이블 미구현)
+- [x] `carts` 테이블 생성 (unique constraint: user_id + prompt_id, `supabase/migrations/003_create_carts_table.sql`)
+- [x] `purchases` 테이블 생성 (`supabase/migrations/004_create_purchases_table.sql`)
+- [x] RLS (Row Level Security) 정책 설정 (profiles/carts/purchases 포함)
 
 #### 데이터 마이그레이션
 
@@ -186,9 +186,9 @@
 
 - [x] 프롬프트 목록 조회 API (`PromptRepositorySupabase.getAll`)
 - [x] 프롬프트 상세 조회 API (`PromptRepositorySupabase.getById`)
-- [ ] 장바구니 CRUD API
-- [ ] 구매 내역 조회 API
-- [ ] 프로필 업데이트 API
+- [x] 장바구니 CRUD API (`CartRepository.supabase.ts` 설계 완료, UI 연동 진행 중)
+- [x] 구매 내역 조회 API (`PurchaseRepository.supabase.ts` 설계 완료, UI 연동 준비)
+- [x] 프로필 업데이트 API (`ProfileRepository.supabase.ts` 설계 완료, `authStore` 연동 준비)
 
 #### 데이터 소스 정합성
 
@@ -200,11 +200,11 @@
 
 #### 토스페이먼츠 연동
 
-- [ ] 토스페이먼츠 SDK 설치 및 설정
-- [ ] 결제창 호출 로직 구현
-- [ ] 결제 승인 처리
-- [ ] 결제 실패 처리
-- [ ] 위치: `app/checkout/page.tsx`
+- [x] 토스페이먼츠 SDK 설치 및 설정
+- [x] 결제창 호출 로직 구현
+- [x] 결제 승인 처리
+- [x] 결제 실패 처리
+- [x] 위치: `app/checkout/page.tsx`, `app/[locale]/checkout/success/page.tsx`
 
 #### 결제 보안 강화
 

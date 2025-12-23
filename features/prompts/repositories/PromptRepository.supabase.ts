@@ -164,8 +164,17 @@ export class PromptRepositorySupabase {
     const { data, error } = await query
 
     if (error) {
-      console.error("Error fetching prompts:", error)
-      throw new Error(`Failed to fetch prompts: ${error.message}`)
+      // Supabase의 PostgrestError는 콘솔에서 `{}`로만 보이는 경우가 있어
+      // 필요한 필드를 펼쳐서 로그로 남깁니다.
+      console.error("Error fetching prompts:", {
+        message: error.message,
+        // code / details / hint는 PostgrestError에서 자주 보는 필드입니다.
+        // 타입 상 존재하지 않을 수도 있으므로 any로 안전하게 접근합니다.
+        code: (error as any).code,
+        details: (error as any).details,
+        hint: (error as any).hint,
+      })
+      throw new Error(`Failed to fetch prompts: ${error.message ?? "Unknown error"}`)
     }
 
     return (data || []).map((row) => this.mapRowToPrompt(row as PromptRow))

@@ -10,14 +10,12 @@ import { useCart } from "@/features/cart/store/cartStore"
 import { useAuth } from "@/features/auth/store/authStore"
 import { ModeToggle } from "@/components/mode-toggle"
 import { useTranslations } from "next-intl"
-import { useSession } from "@clerk/nextjs"
 import { createPromptRepositoryClient, type Prompt } from "@/features/prompts/repositories"
 
 export default function CartPage() {
   const t = useTranslations()
   const { cartItems, removeFromCart, clearCart } = useCart()
   const { isAuthenticated } = useAuth()
-  const { session } = useSession()
   const [prompts, setPrompts] = useState<Prompt[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
@@ -31,9 +29,9 @@ export default function CartPage() {
     async function loadCartPrompts() {
       try {
         setIsLoading(true)
-        const repository = createPromptRepositoryClient(async () => {
-          return (await session?.getToken({ template: "supabase" })) ?? null
-        })
+        // 프롬프트 목록은 RLS 정책상 모든 사용자(anon 포함)가 읽기 가능하므로
+        // Clerk 토큰 없이 공개 Supabase 클라이언트로 조회합니다.
+        const repository = createPromptRepositoryClient()
 
         // 간단하게: 활성 프롬프트 전체를 불러온 뒤 cartItems 기준으로 필터링
         const all = await repository.getAll({ status: "active" })
@@ -47,7 +45,7 @@ export default function CartPage() {
     }
 
     void loadCartPrompts()
-  }, [cartItems, session])
+  }, [cartItems])
 
   const total = useMemo(
     () => prompts.reduce((sum, item) => sum + item.price, 0),
