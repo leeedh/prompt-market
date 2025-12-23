@@ -19,7 +19,7 @@ import { PromptRepositorySupabase } from "./PromptRepository.supabase"
  * export default async function Page() {
  *   const repository = await createPromptRepositoryServer()
  *   const prompts = await repository.getAll()
- *   return <div>{/* ... */}</div>
+ *   return <div>{prompts.map(p => <div key={p.id}>{p.title}</div>)}</div>
  * }
  * ```
  */
