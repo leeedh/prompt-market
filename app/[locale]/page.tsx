@@ -20,7 +20,7 @@ import {
   Sparkles,
   User,
 } from "lucide-react";
-import { Link } from "@/i18n/routing";
+import { Link, useRouter } from "@/i18n/routing";
 import { useCart } from "@/features/cart/store/cartStore";
 import { useAuth } from "@/features/auth/store/authStore";
 import { useToast } from "@/shared/hooks/use-toast";
@@ -59,6 +59,7 @@ export default function HomePage() {
   const { addToCart, cartItems } = useCart();
   const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
 
   // Supabase에서 프롬프트 목록 로드
   useEffect(() => {
@@ -181,16 +182,30 @@ export default function HomePage() {
                 </Link>
                 <UserButton afterSignOutUrl="/" />
               </SignedIn>
-              <Link href="/cart">
-                <Button variant="ghost" size="icon" className="relative" aria-label={`장바구니 보기 (${cartItems.length}개 상품)`}>
-                  <ShoppingCart className="h-5 w-5" />
-                  {cartItems.length > 0 && (
-                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
-                      {cartItems.length}
-                    </span>
-                  )}
-                </Button>
-              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative"
+                aria-label={`장바구니 보기 (${cartItems.length}개 상품)`}
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    toast({
+                      title: "로그인이 필요합니다",
+                      description: "장바구니를 보려면 먼저 로그인해주세요.",
+                    })
+                    router.push("/login")
+                    return
+                  }
+                  router.push("/cart")
+                }}
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {cartItems.length > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                    {cartItems.length}
+                  </span>
+                )}
+              </Button>
               <LocaleSwitcher />
               <ModeToggle />
             </div>
@@ -345,6 +360,14 @@ export default function HomePage() {
                       disabled={cartItems.includes(prompt.id)}
                       onClick={(e) => {
                         e.preventDefault();
+                        if (!isAuthenticated) {
+                          toast({
+                            title: "로그인이 필요합니다",
+                            description: "장바구니에 담으려면 먼저 로그인해주세요.",
+                          });
+                          router.push("/login");
+                          return;
+                        }
                         if (!cartItems.includes(prompt.id)) {
                           addToCart(prompt.id);
                           toast({

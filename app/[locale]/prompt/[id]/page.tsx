@@ -132,6 +132,10 @@ export default function PromptDetailPage({ params }: { params: Promise<{ id: str
 
   const handlePurchase = () => {
     if (!isAuthenticated) {
+      toast({
+        title: "로그인이 필요합니다",
+        description: "구매를 진행하려면 먼저 로그인해주세요.",
+      })
       router.push("/login")
       return
     }
@@ -147,6 +151,10 @@ export default function PromptDetailPage({ params }: { params: Promise<{ id: str
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {
+      toast({
+        title: "로그인이 필요합니다",
+        description: "장바구니에 담으려면 먼저 로그인해주세요.",
+      })
       router.push("/login")
       return
     }
@@ -271,12 +279,24 @@ export default function PromptDetailPage({ params }: { params: Promise<{ id: str
                 <ArrowLeft className="h-5 w-5" />
                 <span className="font-semibold">돌아가기</span>
               </Link>
-              <Link href="/cart">
-                <Button variant="outline" size="sm">
-                  <ShoppingCart className="mr-2 h-4 w-4" />
-                  장바구니
-                </Button>
-              </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    toast({
+                      title: "로그인이 필요합니다",
+                      description: "장바구니를 보려면 먼저 로그인해주세요.",
+                    })
+                    router.push("/login")
+                    return
+                  }
+                  router.push("/cart")
+                }}
+              >
+                <ShoppingCart className="mr-2 h-4 w-4" />
+                장바구니
+              </Button>
             </div>
           </div>
         </div>

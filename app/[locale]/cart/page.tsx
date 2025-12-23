@@ -1,5 +1,7 @@
 "use client"
 
+import { useEffect, useMemo, useState } from "react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Trash2, ShoppingCart, ArrowLeft, Sparkles } from "lucide-react"
@@ -8,31 +10,49 @@ import { useCart } from "@/features/cart/store/cartStore"
 import { useAuth } from "@/features/auth/store/authStore"
 import { ModeToggle } from "@/components/mode-toggle"
 import { useTranslations } from "next-intl"
-
-const mockPrompts = {
-  "1": {
-    id: "1",
-    title: "블로그 포스트 자동 생성 프롬프트",
-    price: 15000,
-    category: "ChatGPT",
-    thumbnail: "/blog-writing-ai.jpg",
-  },
-  "2": {
-    id: "2",
-    title: "제품 상세 이미지 생성 프롬프트",
-    price: 25000,
-    category: "Midjourney",
-    thumbnail: "/product-photography-still-life.png",
-  },
-}
+import { useSession } from "@clerk/nextjs"
+import { createPromptRepositoryClient, type Prompt } from "@/features/prompts/repositories"
 
 export default function CartPage() {
   const t = useTranslations()
   const { cartItems, removeFromCart, clearCart } = useCart()
   const { isAuthenticated } = useAuth()
+  const { session } = useSession()
+  const [prompts, setPrompts] = useState<Prompt[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
-  const items = cartItems.map((id) => mockPrompts[id as keyof typeof mockPrompts]).filter(Boolean)
-  const total = items.reduce((sum, item) => sum + item.price, 0)
+  // Supabase에서 장바구니에 담긴 프롬프트 정보 로드
+  useEffect(() => {
+    if (cartItems.length === 0) {
+      setPrompts([])
+      return
+    }
+
+    async function loadCartPrompts() {
+      try {
+        setIsLoading(true)
+        const repository = createPromptRepositoryClient(async () => {
+          return (await session?.getToken({ template: "supabase" })) ?? null
+        })
+
+        // 간단하게: 활성 프롬프트 전체를 불러온 뒤 cartItems 기준으로 필터링
+        const all = await repository.getAll({ status: "active" })
+        const map = new Map(all.map((p) => [p.id, p]))
+        setPrompts(cartItems.map((id) => map.get(id)).filter(Boolean) as Prompt[])
+      } catch (error) {
+        console.error("장바구니 프롬프트 로드 중 오류:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    void loadCartPrompts()
+  }, [cartItems, session])
+
+  const total = useMemo(
+    () => prompts.reduce((sum, item) => sum + item.price, 0),
+    [prompts],
+  )
 
   return (
     <div className="min-h-screen bg-background">
@@ -58,7 +78,7 @@ export default function CartPage() {
       <div className="container mx-auto px-4 py-8">
         <h1 className="mb-8 text-3xl font-bold">{t("cart.title")}</h1>
 
-        {items.length === 0 ? (
+        {(!isLoading && prompts.length === 0) ? (
           <div className="py-12 text-center">
             <ShoppingCart className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
             <h2 className="mb-2 text-xl font-semibold">{t("cart.empty")}</h2>
@@ -67,17 +87,23 @@ export default function CartPage() {
               <Button>{t("cart.browsePrompts")}</Button>
             </Link>
           </div>
+        ) : isLoading ? (
+          <div className="py-12 text-center">
+            <p className="text-muted-foreground">장바구니를 불러오는 중...</p>
+          </div>
         ) : (
           <div className="grid gap-8 lg:grid-cols-3">
             <div className="lg:col-span-2 space-y-4">
-              {items.map((item) => (
+              {prompts.map((item) => (
                 <Card key={item.id}>
                   <CardContent className="p-4">
                     <div className="flex gap-4">
                       <div className="h-24 w-36 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
-                        <img
+                        <Image
                           src={item.thumbnail || "/placeholder.svg"}
                           alt={item.title}
+                          width={144}
+                          height={96}
                           className="h-full w-full object-cover"
                         />
                       </div>

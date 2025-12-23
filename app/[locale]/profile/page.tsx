@@ -259,11 +259,23 @@ export default function ProfilePage() {
                   구매 내역 보기
                 </Button>
               </Link>
-              <Link href="/cart">
-                <Button variant="outline" className="w-full justify-start bg-transparent">
-                  장바구니 보기
-                </Button>
-              </Link>
+              <Button
+                variant="outline"
+                className="w-full justify-start bg-transparent"
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    toast({
+                      title: "로그인이 필요합니다",
+                      description: "장바구니를 보려면 먼저 로그인해주세요.",
+                    })
+                    router.push("/login")
+                    return
+                  }
+                  router.push("/cart")
+                }}
+              >
+                장바구니 보기
+              </Button>
             </CardContent>
           </Card>
 

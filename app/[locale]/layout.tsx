@@ -8,6 +8,7 @@ import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
 import { ClerkProvider } from '@clerk/nextjs'
+import { CartUserSync } from '@/components/cart-user-sync'
 import { koKR, enUS } from '@clerk/localizations'
 import '../globals.css'
 
@@ -129,6 +130,7 @@ export default async function LocaleLayout({
               enableSystem
               disableTransitionOnChange
             >
+              <CartUserSync />
               {children}
               <Toaster />
               <Analytics />

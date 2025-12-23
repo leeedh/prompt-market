@@ -37,6 +37,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 **중요:**
+
 - `your_supabase_project_url`을 위에서 확인한 Project URL로 교체하세요.
 - `your_supabase_anon_key`를 위에서 확인한 anon/public key로 교체하세요.
 - `.env.local` 파일은 Git에 커밋하지 마세요 (이미 `.gitignore`에 포함되어 있습니다).
@@ -76,28 +77,26 @@ middleware.ts      # next-intl과 Supabase 통합 미들웨어
 서버 컴포넌트, Server Actions, Route Handlers에서 사용:
 
 ```tsx
-import { createClient } from '@/utils/supabase/server'
+import { createClient } from "@/utils/supabase/server";
 
 export default async function ServerComponent() {
-  const supabase = await createClient()
-  
+  const supabase = await createClient();
+
   // 데이터 조회
-  const { data, error } = await supabase
-    .from('prompts')
-    .select('*')
-  
+  const { data, error } = await supabase.from("prompts").select("*");
+
   if (error) {
-    console.error('Error:', error)
-    return <div>Error loading data</div>
+    console.error("Error:", error);
+    return <div>Error loading data</div>;
   }
-  
+
   return (
     <div>
       {data?.map((prompt) => (
         <div key={prompt.id}>{prompt.title}</div>
       ))}
     </div>
-  )
+  );
 }
 ```
 
@@ -106,30 +105,28 @@ export default async function ServerComponent() {
 'use client' 지시어가 있는 컴포넌트에서 사용:
 
 ```tsx
-'use client'
+"use client";
 
-import { createClient } from '@/utils/supabase/client'
-import { useEffect, useState } from 'react'
+import { createClient } from "@/utils/supabase/client";
+import { useEffect, useState } from "react";
 
 export default function ClientComponent() {
-  const supabase = createClient()
-  const [data, setData] = useState([])
-  
+  const supabase = createClient();
+  const [data, setData] = useState([]);
+
   useEffect(() => {
     async function loadData() {
-      const { data, error } = await supabase
-        .from('prompts')
-        .select('*')
-      
+      const { data, error } = await supabase.from("prompts").select("*");
+
       if (!error) {
-        setData(data)
+        setData(data);
       }
     }
-    
-    loadData()
-  }, [])
-  
-  return <div>{/* 렌더링 */}</div>
+
+    loadData();
+  }, []);
+
+  return <div>{/* 렌더링 */}</div>;
 }
 ```
 
@@ -138,112 +135,112 @@ export default function ClientComponent() {
 #### 로그인
 
 ```tsx
-'use client'
+"use client";
 
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from "@/utils/supabase/client";
 
 export default function LoginForm() {
-  const supabase = createClient()
-  
+  const supabase = createClient();
+
   const handleLogin = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
-    })
-    
+    });
+
     if (error) {
-      console.error('Login error:', error)
-      return
+      console.error("Login error:", error);
+      return;
     }
-    
+
     // 로그인 성공
-    console.log('Logged in:', data.user)
-  }
-  
+    console.log("Logged in:", data.user);
+  };
+
   return (
-    <form onSubmit={(e) => {
-      e.preventDefault()
-      const formData = new FormData(e.currentTarget)
-      handleLogin(
-        formData.get('email') as string,
-        formData.get('password') as string
-      )
-    }}>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        handleLogin(
+          formData.get("email") as string,
+          formData.get("password") as string
+        );
+      }}
+    >
       {/* 폼 필드 */}
     </form>
-  )
+  );
 }
 ```
 
 #### 회원가입
 
 ```tsx
-'use client'
+"use client";
 
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from "@/utils/supabase/client";
 
 export default function SignUpForm() {
-  const supabase = createClient()
-  
+  const supabase = createClient();
+
   const handleSignUp = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-    })
-    
+    });
+
     if (error) {
-      console.error('Sign up error:', error)
-      return
+      console.error("Sign up error:", error);
+      return;
     }
-    
+
     // 회원가입 성공
-    console.log('Signed up:', data.user)
-  }
-  
-  return (
-    <form>
-      {/* 폼 필드 */}
-    </form>
-  )
+    console.log("Signed up:", data.user);
+  };
+
+  return <form>{/* 폼 필드 */}</form>;
 }
 ```
 
 #### 현재 사용자 확인
 
 ```tsx
-import { createClient } from '@/utils/supabase/server'
+import { createClient } from "@/utils/supabase/server";
 
 export default async function ProfilePage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) {
-    return <div>로그인이 필요합니다.</div>
+    return <div>로그인이 필요합니다.</div>;
   }
-  
-  return <div>안녕하세요, {user.email}님!</div>
+
+  return <div>안녕하세요, {user.email}님!</div>;
 }
 ```
 
 #### 로그아웃
 
 ```tsx
-'use client'
+"use client";
 
-import { createClient } from '@/utils/supabase/client'
-import { useRouter } from 'next/navigation'
+import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
 
 export default function LogoutButton() {
-  const supabase = createClient()
-  const router = useRouter()
-  
+  const supabase = createClient();
+  const router = useRouter();
+
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
-  }
-  
-  return <button onClick={handleLogout}>로그아웃</button>
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
+
+  return <button onClick={handleLogout}>로그아웃</button>;
 }
 ```
 
@@ -311,4 +308,3 @@ CREATE TRIGGER on_auth_user_created
 - [Supabase Next.js 가이드](https://supabase.com/docs/guides/getting-started/quickstarts/nextjs)
 - [Supabase Auth 문서](https://supabase.com/docs/guides/auth)
 - [Row Level Security 가이드](https://supabase.com/docs/guides/auth/row-level-security)
-

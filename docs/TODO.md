@@ -11,11 +11,10 @@
 - [x] 전역 레이아웃 및 스타일링
 - [x] 반응형 디자인 기본 구조
 
-#### 2. 인증 시스템 (Mock)
+#### 2. 인증 시스템 (Clerk 기반)
 
-- [x] 로그인/회원가입 페이지 (`/login`)
-- [x] Mock 인증 로직 (localStorage 기반)
-- [x] 사용자 상태 관리 (zustand)
+- [x] Clerk 로그인/회원가입 모달 연동 (`@clerk/nextjs`)
+- [x] `useAuth` 래퍼로 Clerk 사용자 상태 노출 (localStorage 의존 제거)
 - [x] 프로필 정보 표시 및 이름 수정 (`/profile`)
 - [x] 로그아웃 기능
 
@@ -75,9 +74,10 @@
 
 #### 9. 데이터 관리
 
-- [x] localStorage 기반 데이터 저장
-- [x] zustand를 통한 상태 관리
-- [x] 장바구니 데이터 영속성
+- [x] Supabase 프롬프트 읽기 연동 (홈/상세, `PromptRepositorySupabase`)
+- [x] Supabase 프롬프트 테이블 마이그레이션 추가 (`supabase/migrations/001_create_prompts_table.sql`)
+- [x] localStorage 기반 장바구니/구매 내역/관리자 프롬프트 저장
+- [x] zustand를 통한 장바구니 상태 관리
 
 ---
 
@@ -163,18 +163,19 @@
 
 #### 인증 시스템
 
-- [ ] Supabase Auth 연동
-- [ ] 회원가입 시 `profiles` 테이블 자동 생성 (Trigger)
-- [ ] 로그인/로그아웃 로직 Supabase로 전환
-- [ ] 위치: `hooks/use-auth.tsx`
+- [ ] Supabase Auth 연동 여부 결정 (현재 Clerk 사용, Supabase 토큰은 Clerk JWT 템플릿으로 발급)
+- [x] Clerk → Supabase JWT 템플릿 사용 (`createPromptRepositoryClient`에서 `session.getToken({ template: "supabase" })`)
+- [ ] 회원가입 시 `profiles` 테이블 자동 생성 (Trigger) — Clerk 사용자 메타데이터와 연동 필요
+- [ ] 로그인/로그아웃 로직을 Supabase Auth로 전환 또는 Clerk 유지 여부 결정
+- [ ] 위치: `features/auth/store/authStore.ts`
 
 #### 데이터베이스 스키마 구축
 
 - [ ] `profiles` 테이블 생성
-- [ ] `prompts` 테이블 생성
+- [x] `prompts` 테이블 생성 + RLS 정책 (`supabase/migrations/001_create_prompts_table.sql`)
 - [ ] `carts` 테이블 생성 (unique constraint: user_id + prompt_id)
 - [ ] `purchases` 테이블 생성
-- [ ] RLS (Row Level Security) 정책 설정
+- [ ] RLS (Row Level Security) 정책 설정 (프롬프트 외 테이블 미구현)
 
 #### 데이터 마이그레이션
 
@@ -183,11 +184,17 @@
 
 #### API 엔드포인트 (Supabase Client)
 
-- [ ] 프롬프트 목록 조회 API
-- [ ] 프롬프트 상세 조회 API
+- [x] 프롬프트 목록 조회 API (`PromptRepositorySupabase.getAll`)
+- [x] 프롬프트 상세 조회 API (`PromptRepositorySupabase.getById`)
 - [ ] 장바구니 CRUD API
 - [ ] 구매 내역 조회 API
 - [ ] 프로필 업데이트 API
+
+#### 데이터 소스 정합성
+
+- [ ] 장바구니/결제/마이페이지/관리자 프롬프트가 `mockPrompts`/localStorage 기반 → Supabase `prompts` 사용으로 전환
+- [ ] 구매 여부/다운로드 로직을 Supabase `purchases`로 전환 (현재 localStorage `purchases`)
+- [ ] 장바구니에 담기는 ID와 Supabase 프롬프트 ID 정합성 확보 (현 `cartItems`는 "1", "2" 고정)
 
 ### 7. 결제 시스템 (토스페이먼츠)
 
@@ -264,9 +271,9 @@
 
 ### Phase 1: 즉시 개선 (1-2일)
 
-1. 토스트 알림 추가 (장바구니 담기, 프로필 저장)
-2. 장바구니 중복 체크 및 버튼 상태 관리
-3. 구매 완료 확인 및 프롬프트 내용 표시
+1. 장바구니/결제/마이페이지에서 Supabase `prompts` 사용하도록 교체 (mock ID 1,2 제거)
+2. 구매 여부/다운로드 판단을 Supabase `purchases` 기반으로 정리 (localStorage 의존 제거)
+3. Clerk ↔ Supabase Auth 전략 결정 및 `profiles` 테이블 자동 생성 트리거 설계
 
 ### Phase 2: 기능 완성 (3-5일)
 
@@ -301,17 +308,16 @@
 
 ### 현재 데이터 구조
 
-- **인증**: `localStorage`의 `auth-storage` 키
-- **장바구니**: `localStorage`의 `cart-storage` 키
-- **구매 내역**: `localStorage`의 `purchases` 키
-- **관리자 프롬프트**: `localStorage`의 `admin_prompts` 키
-- **판매 데이터**: `localStorage`의 `sales_data` 키
+- **인증**: Clerk 세션 (`@clerk/nextjs`), `features/auth/store/authStore.ts` 래퍼, Supabase JWT 템플릿 사용
+- **프롬프트 목록/상세**: Supabase `prompts` 테이블 (홈/상세에서 `PromptRepositorySupabase`)
+- **장바구니**: `localStorage`의 `cart-storage` 키 (zustand)
+- **구매 내역**: `localStorage`의 `purchases` 키 (`PurchaseRepository.local`)
+- **관리자 프롬프트/판매 데이터**: `localStorage`의 `admin_prompts`, `sales_data` 키
 
 ### Mock 데이터 위치
 
-- 프롬프트 목록: `app/page.tsx`의 `mockPrompts` 배열
-- 프롬프트 상세: `app/prompt/[id]/page.tsx`의 `mockPromptDetails` 객체
-- 장바구니/결제: `app/cart/page.tsx`, `app/checkout/page.tsx`의 `mockPrompts` 객체
+- 장바구니/결제: `app/[locale]/cart/page.tsx`, `app/[locale]/checkout/page.tsx`의 `mockPrompts` 객체
+- 구매 내역 다운로드: `app/[locale]/my-page/page.tsx`의 `mockPromptDetails` 객체 (ID "1", "2" 기반)
 
 ### 향후 마이그레이션 시 주의사항
 

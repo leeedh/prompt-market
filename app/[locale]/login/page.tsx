@@ -53,8 +53,7 @@ export default function LoginPage() {
             <TabsContent value="login" className="mt-4">
               <div className="flex justify-center">
                 <SignIn
-                  routing="path"
-                  path="/login"
+                  routing="hash"
                   signUpUrl="/login"
                   afterSignInUrl="/"
                 />
@@ -64,8 +63,7 @@ export default function LoginPage() {
             <TabsContent value="register" className="mt-4">
               <div className="flex justify-center">
                 <SignUp
-                  routing="path"
-                  path="/login"
+                  routing="hash"
                   signInUrl="/login"
                   afterSignUpUrl="/"
                 />
